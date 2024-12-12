@@ -27,12 +27,10 @@ const registerHandler = async (request, h) => {
   });
   const payload = {
     uid: user.uid,
-    aud: 'urn:audience:test', // Sesuai dengan yang ada di strategi
-    iss: 'urn:issuer:test',
     iat: Math.floor(Date.now() / 1000)
   };
-  const token = Jwt.token.generate(payload, 'your-very-secure-secret-key', {
-    ttlSec: 3600, // Expires in 1 hour
+  const token = Jwt.token.generate(payload, 'some_shared_secret', {
+    ttlSec: 3600 * 24 * 30, // Expires in 1 month
   });
 
   const response = h.response({
@@ -76,12 +74,10 @@ const loginHandler = async (request, h) => {
   });
   const payload = {
     uid: user.uid,
-    aud: 'urn:audience:test', // Sesuai dengan yang ada di strategi
-    iss: 'urn:issuer:test',
     iat: Math.floor(Date.now() / 1000)
   };
   const token = Jwt.token.generate(payload, 'some_shared_secret', {
-    ttlSec: 3600, // Expires in 1 hour
+    ttlSec: 3600 * 24 * 30, // Expires in 1 month
   });
   const response = h.response({
     status: "success",
