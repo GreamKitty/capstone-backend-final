@@ -14,12 +14,17 @@ import {
     {
         method: 'POST',
         path: '/login',
+        options: {
+          auth : false
+        },
         handler: loginHandler,
     },
     {
         method: 'POST',
         path: '/register',
-        
+        options: {
+          auth : false
+        },
       handler: registerHandler
     },
     {
@@ -42,12 +47,12 @@ import {
     },
 
     {
-      method: 'GET',
-      path: '/profile/{uid}',
+      method: 'POST',
+      path: '/profile',
       handler: getUsersHandler,
     },
     {
-      method: 'POST',
+      method: 'GET',
       path: '/home',
       handler: homeHandler,
     },
@@ -59,16 +64,25 @@ import {
     {
       method: 'GET',
       path: '/article',
+      options: {
+        auth : false
+      },
       handler: getArticles,
     },
     {
       method: 'POST',
       path: '/article/{judulSlug}',
+      options: {
+        auth : false
+      },
       handler: getOneArticle,
     },
     {
       method: 'POST',
       path: '/chatbot',
+      options: {
+        auth : false
+      },
       handler: chatBotBloomie,
     },
     // {

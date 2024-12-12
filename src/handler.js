@@ -5,6 +5,7 @@ import { doc, setDoc, collection, getDoc, updateDoc, getDocs } from "firebase/fi
 import { ref, uploadBytes, getDownloadURL, list } from "firebase/storage";
 import axios from 'axios';
 import {VertexAI} from '@google-cloud/vertexai';
+import Jwt from '@hapi/jwt';
 
 // Initialize Firebase Authentication and get a reference to the service
 const auth = getAuth(app);
@@ -24,9 +25,18 @@ const registerHandler = async (request, h) => {
     const errorMessage = error.message;
     return errorMessage;
   });
+  const payload = {
+    uid: user.uid,
+    aud: 'urn:audience:test', // Sesuai dengan yang ada di strategi
+    iss: 'urn:issuer:test',
+    iat: Math.floor(Date.now() / 1000)
+  };
+  const token = Jwt.token.generate(payload, 'your-very-secure-secret-key', {
+    ttlSec: 3600, // Expires in 1 hour
+  });
 
   const response = h.response({
-    user
+    token
   })
   const uid = user.uid;
   if(success){
@@ -52,19 +62,30 @@ const loginHandler = async (request, h) => {
     const {email, password} = request.payload;
     const user = await signInWithEmailAndPassword(auth, email, password) 
   .then((userCredential) => {
-    console.log(userCredential.user.uid)
+    return userCredential.user
   })
   .catch((error) => {
     const errorCode = error.code;
     const errorMessage = error.message;
     const response = h.response({
-      status: "error"
+      status: "error",
+      errorMessage
     })
-    response.code(500);
+    response.code(errorCode);
     return response;
   });
+  const payload = {
+    uid: user.uid,
+    aud: 'urn:audience:test', // Sesuai dengan yang ada di strategi
+    iss: 'urn:issuer:test',
+    iat: Math.floor(Date.now() / 1000)
+  };
+  const token = Jwt.token.generate(payload, 'some_shared_secret', {
+    ttlSec: 3600, // Expires in 1 hour
+  });
   const response = h.response({
-    status: "success"
+    status: "success",
+    token
   })
   response.code(200)
   return response
@@ -72,7 +93,7 @@ const loginHandler = async (request, h) => {
 
 const userUploadPhoto = async (request, h) => {
   const data = request.payload;
-  const { uid } = request.payload;
+  const  uid  = await request.auth.artifacts.decoded.payload.uid;
   let success = false
   if (!data.userPhoto) {
     return h.response({ message: 'No file uploaded' }).code(400);
@@ -115,7 +136,8 @@ const userUploadPhoto = async (request, h) => {
 };
 
 const registerBayiHandler = async (request, h) => {
-  const {uid, namalengkapbayi, tanggallahirbayi, jeniskelaminbayi, tinggibadanbayi, beratbadanbayi, lingkarlenganbayi} = request.payload;
+  const { namalengkapbayi, tanggallahirbayi, jeniskelaminbayi, tinggibadanbayi, beratbadanbayi, lingkarlenganbayi} = request.payload;
+  const  uid  = await request.auth.artifacts.decoded.payload.uid;
   const date = Date.now() - new Date(tanggallahirbayi).getTime()
   function calculateAge(diffMilliseconds) {
     const millisecondsInYear = 365.25 * 24 * 60 * 60 * 1000; // Milliseconds in a year
@@ -160,8 +182,8 @@ const registerBayiHandler = async (request, h) => {
 }
 
 const getUsersHandler = async (request, h) => {
-  const { uid } = request.params; // Mengambil email dari parameter URL
-
+  const  uid  = await request.auth.artifacts.decoded.payload.uid; // Mengambil email dari parameter URL
+  
   try {
       // Referensi ke dokumen spesifik berdasarkan email
       const userDocRef = doc(db, 'users', uid);
@@ -212,7 +234,7 @@ const getUsersHandler = async (request, h) => {
 };
 
 const homeHandler = async (request, h) => {
-  const { uid } = request.payload;
+  const  uid  = await request.auth.artifacts.decoded.payload.uid;
   try {
     const userColRef = collection(db, 'users', uid, 'bayi');
 
@@ -297,13 +319,13 @@ const homeHandler = async (request, h) => {
 
 const updateStatusBayi = async (request, h) => {
   const { 
-    uid, 
     namalengkapbayibaru, 
     tanggallahirbayibaru, 
     beratbadanbayibaru, 
     tinggibadanbayibaru, 
     lingkarlenganbayibaru,
   } = request.payload;
+  const  uid  = await request.auth.artifacts.decoded.payload.uid;
 
   // Hitung usia bayi berdasarkan tanggal lahir yang baru
   const dateDifference = Date.now() - new Date(tanggallahirbayibaru).getTime();
